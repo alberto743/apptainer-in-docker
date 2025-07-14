@@ -3,8 +3,9 @@
 [![Docker images available at ghcr.io/alberto743/apptainer-in-docker](https://img.shields.io/badge/GHCR-ghcr.io%2Falberto743%2Fapptainer--in--docker-blue)](https://github.com/alberto743/apptainer-in-docker/pkgs/container/apptainer-in-docker)
 
 Two Docker recepies are availble in this repository;
-- [`package.Dockerfile`](package.Dockerfile) installs Apptainer based on the version available in [Alpine](https://pkgs.alpinelinux.org/package/edge/community/x86_64/apptainer)
-- [`compile.Dockerfile`](compile.Dockerfile) installs a custom version of Apptainer from sources based on the tag specified via the `APPTAINER_COMMITISH` build argument.
+- [`package/Dockerfile`](package/Dockerfile) installs Apptainer based on the version available in [Alpine](https://pkgs.alpinelinux.org/package/edge/community/x86_64/apptainer)
+- [`compile/Dockerfile`](compile/Dockerfile) installs a custom version of Apptainer from sources based on the tag specified via the `APPTAINER_COMMITISH` build argument.
+- [`cresco7/Dockerfile`](cresco7/Dockerfile) creates RPMS for installation on [Cresco7](https://www.eneagrid.enea.it/Resources_en/CRESCO_documents/index.html). They are made available as releases.
 The resulting Docker image can be used on any system with Docker or Podman to build Apptainer images.
 This project is targeted towards high-performance computing users who have Apptainer/Singularity installed on their clusters but do not have Apptainer/Singularity on their local computers to build images.
 

@@ -1,0 +1,55 @@
+name: rpm for Cresco7
+description: Build and test rpm for Cresco7
+
+on:
+  push:
+    branches:
+      - 'ALB/*'
+  workflow_dispatch:
+    inputs:
+      APPTAINER_COMMITISH:
+        description: 'Apptainer version'
+        type: choice
+        required: true
+        default: 'v1.4.1'
+        options:
+          - 'v1.0.3'
+          - 'v1.1.9'
+          - 'v1.2.5'
+          - 'v1.3.6'
+          - 'v1.4.1'
+
+jobs:
+  cresco7:
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Get short SHA-1 and Apptainer release selected
+      id: vars
+      run: |
+        git_hash_short=$(git rev-parse --short $GITHUB_SHA)
+        apptainer_release=$(curl -s https://api.github.com/repos/apptainer/apptainer/releases/latest | jq -r '.tag_name')
+        apptainer_version=$(echo $apptainer_release | sed 's/^v//')
+        build_date=$(date -u +'%Y%m%d')
+        echo "git_hash_short=$git_hash_short" >> $GITHUB_OUTPUT
+        echo "apptainer_release=$apptainer_release" >> $GITHUB_OUTPUT
+        echo "apptainer_release_short=$apptainer_release_short" >> $GITHUB_OUTPUT
+        echo "build_date=$build_date" >> $GITHUB_OUTPUT
+    - name: Build the Docker builder (compile selected tag)
+      run: docker build --build-arg ALMALINUX_VERSION=9.2 --build-arg APPTAINER_COMMITISH=${{ steps.vars.outputs.apptainer_release }} --target builder -t apptainer_builder -f cresco/Dockerfile .
+    - name: Build the Docker tester (install rpm for selected tag)
+      run: docker build --build-arg ALMALINUX_VERSION=9.2 --build-arg APPTAINER_COMMITISH=${{ steps.vars.outputs.apptainer_release }} --build-arg APPTAINER_VERSION=${{ steps.vars.outputs.apptainer_version }} --target tester -t apptainer_tester -f cresco/Dockerfile .
+    - name: Test the Docker image (compile selected tag) - print Apptainer version
+      run: docker run --rm apptainer_tester apptainer version
+    - name: Extract RPM from the Docker image
+      run: |
+        docker create --name apptainer_rpm_extract apptainer_builder
+        docker cp apptainer_rpm_extract:/root/rpmbuild/RPMS/x86_64/apptainer-${{ steps.vars.outputs.apptainer_version }}-1.el9.x86_64.rpm .
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: apptainer-${{ steps.vars.outputs.apptainer_version }}-1.el9.x86_64.rpm
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
